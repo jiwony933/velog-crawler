@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const TurndownService = require('turndown');
 
 async function scrapeBelogPosts(username) {
   const browser = await puppeteer.launch({ headless: false });
@@ -27,7 +28,7 @@ async function scrapeBelogPosts(username) {
     tabs[i] = [];
   }
   await Promise.all(
-    postLinks.map(async (link, index) => {
+    postLinks.slice(0, 5).map(async (link, index) => {
       tabs[index % tabCount].push(link);
     })
   );
@@ -39,6 +40,7 @@ async function scrapeBelogPosts(username) {
         postPage.goto(`https://velog.io${link}`);
         const post = await scrapPost(postPage);
         console.log(post, 'post');
+        createMarkdownFile(post);
       }
     })
   );
@@ -47,7 +49,7 @@ async function scrapeBelogPosts(username) {
 }
 
 // 사용자 이름을 전달하여 스크래핑 시작
-scrapeBelogPosts('hbin12212');
+scrapeBelogPosts('jiwonyyy');
 
 async function scrollToBottom(page) {
   await page.evaluate(async () => {
@@ -104,4 +106,52 @@ async function scrapPost(page) {
   }
 }
 
-async function savePost(post) {}
+// HTML을 마크다운으로 변환하는 함수
+function convertToMarkdown(html) {
+  const turndownService = new TurndownService();
+  turndownService.addRule('pre', {
+    filter: 'pre',
+    replacement: function (content, node) {
+      const language = node.firstChild && node.firstChild.className;
+      const codeBlock =
+        '```' + (language?.split('-')[1] || '') + '\n' + content + '\n```';
+      return codeBlock;
+    },
+  });
+
+  return turndownService.turndown(html);
+}
+
+function createMarkdownFile(data) {
+  const markdownContent = `---
+  title: '${data.title}'
+  date: '${data.createdAt}'
+  ---
+  
+  ${convertToMarkdown(data.content)}`;
+
+  fs.writeFile(
+    `${removeSpecialCharacters(data.title)}.md`,
+    markdownContent,
+    (err) => {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log('Markdown file created successfully');
+      }
+    }
+  );
+  function removeSpecialCharacters(filename) {
+    const specialCharactersRegex = /[^a-zA-Z0-9가-힣\s-]|^(?=\s)|(?<=\s)$/g; // 특수문자 및 앞뒤 공백을 찾기 위한 정규식
+
+    const parts = filename.split('.');
+    const filenameWithoutExtension = parts[0];
+
+    const cleanedFilename = filenameWithoutExtension.replace(
+      specialCharactersRegex,
+      '-'
+    );
+
+    return cleanedFilename;
+  }
+}
