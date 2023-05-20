@@ -45,17 +45,18 @@ async function scrapeVelogPosts(username) {
   );
 
   await Promise.all(
-    tabs.map(async (links) => {
+    tabs.map(async (linksAndSummaries) => {
       const postPage = await browser.newPage();
-      for await (const link of links) {
-        postPage.goto(`https://velog.io${link.link}`);
+      for await (const linkAndSummary of linksAndSummaries) {
+        postPage.goto(`https://velog.io${linkAndSummary.link}`);
 
-        const post = await scrapPost(postPage, link.summary);
+        const post = await scrapPost(postPage, linkAndSummary);
         createMarkdownFile(post);
       }
     })
   );
 
+  await browser.close();
   console.log('스크래핑 종료');
 }
 

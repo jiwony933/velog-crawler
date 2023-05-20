@@ -1,9 +1,5 @@
 const fs = require('fs');
-const {
-  convertToMarkdown,
-  removeSpecialCharacters,
-  formatDateAgo,
-} = require('./utils');
+const { convertToMarkdown, formatDateAgo } = require('./utils');
 
 function createMarkdownFile(data) {
   const markdownContent = `---
@@ -15,17 +11,13 @@ function createMarkdownFile(data) {
   
   ${convertToMarkdown(data.content)}`;
 
-  fs.writeFile(
-    `posts/${removeSpecialCharacters(data.title)}.md`,
-    markdownContent,
-    (err) => {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log('Markdown file created successfully');
-      }
+  fs.writeFile(`posts/${data.fileName}.md`, markdownContent, (err) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log(`${data.fileName} 파일 생성완료!`);
     }
-  );
+  });
 }
 
 async function scrollToBottom(page) {
@@ -47,7 +39,7 @@ async function scrollToBottom(page) {
   });
 }
 
-async function scrapPost(page, summary) {
+async function scrapPost(page, linkAndSummary) {
   try {
     await page.waitForNavigation();
     await page.waitForSelector('h1:nth-child(1)');
@@ -76,7 +68,8 @@ async function scrapPost(page, summary) {
       title: postTitle,
       createdAt: postCreatedAt,
       content: postContent,
-      summary: summary,
+      summary: linkAndSummary.summary,
+      fileName: linkAndSummary.link.split('/')[2],
     };
   } catch (e) {
     console.log('❌❌❌❌', page.url(), e);

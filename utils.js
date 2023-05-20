@@ -16,25 +16,6 @@ function convertToMarkdown(html) {
   return turndownService.turndown(html);
 }
 
-function removeSpecialCharacters(filename) {
-  const specialCharactersRegex = /[^a-zA-Z0-9가-힣\s-]|^(?=\s)|(?<=\s)$/g; // 특수문자 및 앞뒤 공백을 찾기 위한 정규식
-
-  const parts = filename.split('.');
-  const filenameWithoutExtension = parts[0];
-
-  const cleanedFilename = filenameWithoutExtension
-    .replace(specialCharactersRegex, (match, index) => {
-      if (index === 0) {
-        return ''; // 제목의 처음에 있는 특수 문자를 원하는 문자로 대체 (예: 빈 문자열)
-      }
-      return '-';
-    })
-    .trim()
-    .replaceAll(' ', '-'); // 공백 제거는 trim() 함수로 처리
-
-  return cleanedFilename;
-}
-
 function formatDateAgo(dateString) {
   if (dateString.includes('전')) {
     const currentDate = new Date();
@@ -59,6 +40,5 @@ function formatDateAgo(dateString) {
 
 module.exports = {
   convertToMarkdown,
-  removeSpecialCharacters,
   formatDateAgo,
 };
